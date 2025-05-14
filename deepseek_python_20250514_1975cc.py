@@ -204,6 +204,6 @@ with st.container():
 st.markdown("---")
 st.caption("""
 Developed for AgriConnect Summit Hackathon | Data sources: FMARD, FAO, NARO  
-Team Members: [Ibrahim Yisau,Osazuwa Micheal,Hauwa Salihu,Yussuf] | Contact: i.yisau@gmail.com  
+Team Members: Ibrahim Yisau|Osazuwa Micheal|Hauwa Salihu|Yussuf | Contact: i.yisau@gmail.com  
 Streamlit App | All rights reserved © 2025
 """)
