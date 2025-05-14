@@ -1,209 +1,186 @@
+# SECTION 1: Project Setup & Imports
+
 import streamlit as st
 import pandas as pd
+import numpy as np
 import altair as alt
+import random
 
-# ======================
-# DSS KNOWLEDGE BASE
-# ======================
-CROP_RISK_RULES = {
-    "maize": {
-        "open sack": {"risk": "High", "reason": "Prone to mold in humidity", "recommendation": "Use hermetic bags"},
-        "crib": {"risk": "Medium", "reason": "Rodent/pest exposure", "recommendation": "Treat with neem powder"},
-        "silo": {"risk": "Low", "reason": "Controlled conditions", "recommendation": "Monitor moisture levels"}
-    },
-    "onion": {
-        "open field": {"risk": "High", "reason": "Sunscald and sprouting", "recommendation": "Cure before storage"},
-        "mesh bags": {"risk": "Medium", "reason": "Limited airflow", "recommendation": "Hang in ventilated shed"},
-        "cold room": {"risk": "Low", "reason": "Dormancy preservation", "recommendation": "Maintain 0-4°C"}
-    },
-    "plantain": {
-        "bunch hanging": {"risk": "Medium", "reason": "Even ripening", "recommendation": "Harvest at 75% maturity"},
-        "cardboard box": {"risk": "High", "reason": "Bruising and compression", "recommendation": "Use separators"},
-        "ripening room": {"risk": "Low", "reason": "Ethylene control", "recommendation": "Monitor daily"}
-    },
-    "yam": {
-        "barn": {"risk": "Medium", "reason": "Sprouting after 3 months", "recommendation": "Treat with wood ash"},
-        "pit": {"risk": "High", "reason": "Rot in rainy season", "recommendation": "Line with straw"},
-        "cold storage": {"risk": "Low", "reason": "12-month shelf life", "recommendation": "Maintain 12°C"}
-    },
-    "cassava": {
-        "open pile": {"risk": "High", "reason": "48-hour spoilage window", "recommendation": "Process immediately"},
-        "trench": {"risk": "Medium", "reason": "Partial protection", "recommendation": "Cover with moist soil"},
-        "processed flour": {"risk": "Low", "reason": "Stable shelf life", "recommendation": "Package when fully dry"}
-    },
-    "tomato": {
-        "open basket": {"risk": "High", "reason": "Bruising and decay", "recommendation": "Use plastic crates"},
-        "shaded shed": {"risk": "Medium", "reason": "Limited shelf life", "recommendation": "Sell within 2 days"},
-        "cold chain": {"risk": "Low", "reason": "14-day freshness", "recommendation": "Pre-cool before storage"}
-    }
-}
+# Page Config
+st.set_page_config(page_title="AgroAccess Pro", layout="wide")
 
-LOGISTICS_OPTIONS = {
-    "maize": ["Direct to market", "Grain silo", "Industrial buyer"],
-    "onion": ["Local markets", "Export channels", "Processing plants"],
-    "plantain": ["Roadside sales", "Urban markets", "Chips processors"],
-    "yam": ["Village markets", "Interstate trade", "Export"],
-    "cassava": ["Local processors", "Industrial starch", "Gari markets"],
-    "tomato": ["Fresh markets", "Ketchup factories", "Supermarkets"]
-}
+# Title
+st.title("🚜 AgroAccess Pro - Empowering Smallholder Farmers")
 
-# ======================
-# DSS CORE FUNCTIONS
-# ======================
-def generate_recommendation(crop, storage_method):
-    """Core DSS analysis function"""
-    try:
-        result = CROP_RISK_RULES[crop][storage_method]
-        return {
-            "risk_level": result["risk"],
-            "risk_reason": result["reason"],
-            "action_items": [
-                result["recommendation"],
-                f"Logistics options: {', '.join(LOGISTICS_OPTIONS[crop])}"
-            ],
-            "storage_method": storage_method
-        }
-    except KeyError:
-        return {
-            "risk_level": "Unknown",
-            "risk_reason": "No data available",
-            "action_items": ["Consult agricultural officer"],
-            "storage_method": storage_method
-        }
-
-def calculate_economic_impact(crop, risk_level):
-    """DSS financial impact projection"""
-    baseline = {
-        "maize": {"high": 0.35, "medium": 0.2, "low": 0.1},
-        "onion": {"high": 0.4, "medium": 0.25, "low": 0.15},
-        "plantain": {"high": 0.45, "medium": 0.3, "low": 0.15},
-        "yam": {"high": 0.3, "medium": 0.2, "low": 0.1},
-        "cassava": {"high": 0.5, "medium": 0.3, "low": 0.15},
-        "tomato": {"high": 0.4, "medium": 0.25, "low": 0.1}
-    }
-    reduction = {"High": 0.15, "Medium": 0.3, "Low": 0.5}
-    
-    loss_rate = baseline.get(crop, {}).get(risk_level.lower(), 0.3)
-    improved_rate = loss_rate * (1 - reduction.get(risk_level, 0.2))
-    
-    return {
-        "current_loss": f"{loss_rate*100:.0f}%",
-        "projected_loss": f"{improved_rate*100:.0f}%",
-        "value_saved": f"₦{(loss_rate - improved_rate)*75000:,.0f} per ton"
-    }
-
-# ======================
-# DSS USER INTERFACE
-# ======================
-st.set_page_config(
-    page_title="AgriSmart DSS",
-    page_icon="🌱",
-    layout="wide"
+# Subtitle
+st.markdown(
+    """
+    Welcome to AgroAccess Pro — a data-powered profiling tool to improve access to finance, resources, and logistics for smallholder farmers.
+    """
 )
 
-# Header
-st.title("🌱 AgriSmart Decision Support System")
-st.markdown("""
-**Reducing Post-Harvest Losses for Nigerian Farmers**  
-*Developed for AgriConnect Summit Hackathon - Team DSS*
-""")
+# Sidebar note
+st.sidebar.markdown("👤 **User Settings**")
 
-# Main DSS Interface
-with st.container():
-    st.header("1. Enter Harvest Details")
-    col1, col2 = st.columns(2)
-    with col1:
-        crop = st.selectbox(
-            "SELECT CROP",
-            options=list(CROP_RISK_RULES.keys()),
-            help="Choose your harvested crop"
-        )
-    with col2:
-        storage = st.selectbox(
-            "STORAGE METHOD",
-            options=list(CROP_RISK_RULES[crop].keys()),
-            help="Current storage approach"
-        )
+# Sample regions & crops (can expand later)
+regions = ['North Central', 'North West', 'South West', 'South East', 'North East', 'South South']
+crops = ['Maize', 'Rice', 'Cassava', 'Tomato', 'Yam', 'Groundnut', 'Soybean', 'Vegetables']
 
-# DSS Analysis
-if st.button("Generate Recommendations", type="primary"):
-    with st.spinner("Analyzing your post-harvest scenario..."):
-        recommendation = generate_recommendation(crop, storage)
-        impact = calculate_economic_impact(crop, recommendation["risk_level"])
-        
-        st.header("2. DSS Analysis Report")
-        
-        # Risk Assessment
-        with st.expander("📊 Risk Evaluation", expanded=True):
-            cols = st.columns(3)
-            cols[0].metric("RISK LEVEL", recommendation["risk_level"])
-            cols[1].metric("CURRENT LOSS RATE", impact["current_loss"])
-            cols[2].metric("PROJECTED LOSS RATE", impact["projected_loss"])
-            
-            st.markdown(f"""
-            **CROP**: {crop.capitalize()}  
-            **Storage Method**: {recommendation['storage_method']}  
-            **Key Concern**: {recommendation['risk_reason']}
-            """)
-        
-        # Recommendations
-        with st.expander("Action Plan", expanded=True):
-            st.subheader("Immediate Actions")
-            for action in recommendation["action_items"]:
-                st.markdown(f"- {action}")
-            
-            st.subheader("Long-Term Strategies")
-            st.markdown("""
-            - Partner with storage cooperatives
-            - Explore contract farming
-            - Invest in value-addition
-            """)
-        
-        # Economic Impact
-        with st.expander("Economic Impact", expanded=True):
-            st.markdown(f"""
-            | Metric | Before DSS | With DSS | Improvement |
-            |--------|------------|----------|-------------|
-            | Loss Rate | {impact['current_loss']} | {impact['projected_loss']} | {float(impact['current_loss'].strip('%'))-float(impact['projected_loss'].strip('%'))}% |
-            | Value Saved | - | {impact['value_saved']} | - |
-            """)
+# SECTION 2: Sample Farmer Profile Generator
 
-# DSS Knowledge Base
-with st.container():
-    st.header("3. DSS Knowledge Base")
-    tab1, tab2 = st.tabs(["Crop Guidelines", "About This System"])
-    
-    with tab1:
-        for crop_name, methods in CROP_RISK_RULES.items():
-            with st.expander(f"{crop_name.upper()} STORAGE OPTIONS"):
-                df = pd.DataFrame.from_dict(methods, orient="index")
-                st.dataframe(df)
-    
-    with tab2:
-        st.markdown("""
-        ## About This DSS
-        
-        **About This Decision Support System**  
-        This tool combines agricultural expertise with data analysis to:
-        - Predict post-harvest loss risks
-        - Recommend mitigation strategies
-        - Project economic impacts
-        
-        **Development Roadmap**:
-        1. Phase 1: Rule-based recommendations (current)
-        2. Phase 2: Machine learning (& Weather) integration 
-        3. Phase 3: Real-time market linkage 
-        
-        **Data Sources**:
-        - FMARD reports
-        - FAO best practices
-        - NARO field studies
-        """)
+def generate_sample_farmer_data(n=200):
+    data = []
+    for i in range(n):
+        region = random.choice(regions)
+        crop = random.choice(crops)
+        farm_size = round(np.random.uniform(0.5, 5), 2)  # hectares
+        annual_yield = round(farm_size * random.uniform(1.5, 3.5), 2)  # tons
+        logistics_access = random.choice(['None', 'Cold Truck Nearby', 'On-Demand Request'])
+        needs_finance = random.choice([True, False])
+        market_access = random.choice(['Low', 'Medium', 'High'])
 
-# Footer
+        data.append({
+            'Farmer ID': f'F{i+1:03d}',
+            'Region': region,
+            'Crop': crop,
+            'Farm Size (ha)': farm_size,
+            'Annual Yield (tons)': annual_yield,
+            'Logistics': logistics_access,
+            'Needs Finance': needs_finance,
+            'Market Access': market_access
+        })
+    return pd.DataFrame(data)
+
+# Create and cache sample dataset
+@st.cache_data
+def get_sample_data():
+    return generate_sample_farmer_data()
+
+df_farmers = get_sample_data()
+
+# SECTION 3: Streamlit UI + Summary Dashboard
+
+st.title("🌾 AgriAccess Insights Dashboard")
+st.markdown("Supporting smallholder farmers with insights on logistics, finance, and market access.")
+
+# Filters
+with st.sidebar:
+    st.header("🔎 Filter Options")
+    selected_region = st.selectbox("Select Region", ["All"] + regions)
+    selected_crop = st.selectbox("Select Crop", ["All"] + crops)
+
+# Apply filters
+filtered_df = df_farmers.copy()
+if selected_region != "All":
+    filtered_df = filtered_df[filtered_df["Region"] == selected_region]
+if selected_crop != "All":
+    filtered_df = filtered_df[filtered_df["Crop"] == selected_crop]
+
+# Summary Metrics
+col1, col2, col3 = st.columns(3)
+col1.metric("👩‍🌾 Total Farmers", len(filtered_df))
+col2.metric("🚚 Logistics Gaps", filtered_df[filtered_df["Logistics"] == "None"].shape[0])
+col3.metric("💰 Finance Needs", filtered_df[filtered_df["Needs Finance"]].shape[0])
+
 st.markdown("---")
-st.caption("""
-Developed for AgriConnect Summit Hackathon | Data sources: FMARD, FAO, NARO  
-Team Members: Ibrahim Yisau|Osazuwa Micheal|Hauwa Salihu|Yussuf | Contact: i.yisau@gmail.com  
-Streamlit App | All rights reserved © 2025
-""")
+
+# Top Investment Opportunities
+st.subheader("📊 Top Investment Opportunities")
+inv_needs = {
+    "Cold Storage Hubs": filtered_df[filtered_df["Logistics"] == "None"].shape[0],
+    "Processing Plants": filtered_df[filtered_df["Market Access"] == "Low"].shape[0],
+    "Credit Programs": filtered_df[filtered_df["Needs Finance"]].shape[0]
+}
+inv_df = pd.DataFrame(list(inv_needs.items()), columns=["Need", "Farmer Count"])
+inv_df = inv_df.sort_values("Farmer Count", ascending=False)
+
+st.dataframe(inv_df, use_container_width=True)
+
+# SECTION 4: Cold Chain Logistics Matching System
+
+st.subheader("🚚 Logistics Matching: Cold Storage Support")
+
+# Get farmers with no logistics
+no_logistics_df = filtered_df[filtered_df["Logistics"] == "None"]
+
+# Simulated cold storage providers
+cold_storage = pd.DataFrame({
+    "Provider Name": ["CoolChain Ltd", "AgroChill Hub", "FreshLogistics NG"],
+    "Region": ["North", "South", "East"],
+    "Capacity (tons)": [50, 100, 80],
+    "Specialty Crops": [["Tomatoes", "Pepper"], ["Cassava", "Maize"], ["Onion", "Pepper"]],
+    "Contact": ["0802-111-0001", "0803-222-0002", "0804-333-0003"]
+})
+
+# Match logic: same region and crop
+matches = []
+for _, farmer in no_logistics_df.iterrows():
+    for _, provider in cold_storage.iterrows():
+        if provider["Region"] == farmer["Region"] and farmer["Crop"] in provider["Specialty Crops"]:
+            matches.append({
+                "Farmer ID": farmer["Farmer ID"],
+                "Crop": farmer["Crop"],
+                "Region": farmer["Region"],
+                "Cold Storage Provider": provider["Provider Name"],
+                "Contact": provider["Contact"]
+            })
+
+if matches:
+    match_df = pd.DataFrame(matches)
+    st.success(f"{len(match_df)} farmers matched with cold storage providers.")
+    st.dataframe(match_df, use_container_width=True)
+else:
+    st.warning("No matches found. Consider expanding provider list or simulating more data.")
+
+# SECTION 5: Investment Opportunity Dashboard
+
+st.subheader("📊 Investment Opportunities Dashboard")
+
+# Count missing resources by region
+investment_needs = filtered_df.groupby("Region").agg({
+    "Storage": lambda x: (x == "None").sum(),
+    "Processing": lambda x: (x == "None").sum(),
+    "Logistics": lambda x: (x == "None").sum()
+}).reset_index()
+
+investment_needs.columns = ["Region", "Lack of Storage", "Lack of Processing", "Lack of Logistics"]
+
+# Sort by most underserved
+sorted_investment = investment_needs.sort_values(by=["Lack of Storage", "Lack of Processing", "Lack of Logistics"], ascending=False)
+
+st.markdown("### 🔍 Top Regions Lacking Infrastructure")
+st.dataframe(sorted_investment, use_container_width=True)
+
+# Highlight Top Priority Region
+top_region = sorted_investment.iloc[0]
+st.success(
+    f"📍 **Top Priority Region**: {top_region['Region']}\n\n"
+    f"- 🚫 Storage Gaps: {top_region['Lack of Storage']}\n"
+    f"- ⚙️ Processing Gaps: {top_region['Lack of Processing']}\n"
+    f"- 🚚 Logistics Gaps: {top_region['Lack of Logistics']}\n\n"
+    "✅ Recommendation: Prioritize investment in storage hubs or mobile cold units in this area."
+)
+
+# SECTION 6: Footer & Optional Download
+
+st.markdown("---")
+st.markdown("### 📥 Download Filtered Dataset (Optional)")
+
+# Optional CSV download
+csv = filtered_df.to_csv(index=False).encode("utf-8")
+st.download_button(
+    label="Download CSV",
+    data=csv,
+    file_name="filtered_farmer_data.csv",
+    mime="text/csv"
+)
+
+# Footer with team credit and hackathon note
+st.markdown(
+    """
+    ---
+    👩‍🌾 **AgroFinanceMatch**: Connecting farmers with finance and logistics for impact.  
+    🚀 Built for the **Hackathon 2025** to improve access to affordable finance for youth agripreneurs in Nigeria.  
+    💡 Powered by Streamlit and Python | 🔍 Data Source: [Sample/Uploaded CSV]
+    """
+)
