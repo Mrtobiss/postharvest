@@ -105,7 +105,7 @@ st.set_page_config(
 st.title("🌱 AgriSmart Decision Support System")
 st.markdown("""
 **Reducing Post-Harvest Losses for Nigerian Farmers**  
-*Developed for [Competition Name] - Team [Your Team Name]*
+*Developed for AgriConnect Summit Hackathon - Team DSS*
 """)
 
 # Main DSS Interface
@@ -126,7 +126,7 @@ with st.container():
         )
 
 # DSS Analysis
-if st.button("GENERATE DSS REPORT", type="primary"):
+if st.button("Generate Recommendations", type="primary"):
     with st.spinner("Analyzing your post-harvest scenario..."):
         recommendation = generate_recommendation(crop, storage)
         impact = calculate_economic_impact(crop, recommendation["risk_level"])
@@ -134,7 +134,7 @@ if st.button("GENERATE DSS REPORT", type="primary"):
         st.header("2. DSS Analysis Report")
         
         # Risk Assessment
-        with st.expander("📊 RISK EVALUATION", expanded=True):
+        with st.expander("📊 Risk Evaluation", expanded=True):
             cols = st.columns(3)
             cols[0].metric("RISK LEVEL", recommendation["risk_level"])
             cols[1].metric("CURRENT LOSS RATE", impact["current_loss"])
@@ -142,12 +142,12 @@ if st.button("GENERATE DSS REPORT", type="primary"):
             
             st.markdown(f"""
             **CROP**: {crop.capitalize()}  
-            **STORAGE METHOD**: {recommendation['storage_method']}  
-            **KEY CONCERN**: {recommendation['risk_reason']}
+            **Storage Method**: {recommendation['storage_method']}  
+            **Key Concern**: {recommendation['risk_reason']}
             """)
         
         # Recommendations
-        with st.expander("✅ ACTION PLAN", expanded=True):
+        with st.expander("Action Plan", expanded=True):
             st.subheader("Immediate Actions")
             for action in recommendation["action_items"]:
                 st.markdown(f"- {action}")
@@ -160,9 +160,9 @@ if st.button("GENERATE DSS REPORT", type="primary"):
             """)
         
         # Economic Impact
-        with st.expander("💵 ECONOMIC IMPACT", expanded=True):
+        with st.expander("Economic Impact", expanded=True):
             st.markdown(f"""
-            | METRIC | BEFORE DSS | WITH DSS | IMPROVEMENT |
+            | Metric | Before DSS | With DSS | Improvement |
             |--------|------------|----------|-------------|
             | Loss Rate | {impact['current_loss']} | {impact['projected_loss']} | {float(impact['current_loss'].strip('%'))-float(impact['projected_loss'].strip('%'))}% |
             | Value Saved | - | {impact['value_saved']} | - |
@@ -171,7 +171,7 @@ if st.button("GENERATE DSS REPORT", type="primary"):
 # DSS Knowledge Base
 with st.container():
     st.header("3. DSS Knowledge Base")
-    tab1, tab2 = st.tabs(["📚 CROP GUIDELINES", "ℹ️ ABOUT THE SYSTEM"])
+    tab1, tab2 = st.tabs(["Crop Guidelines", "About This System"])
     
     with tab1:
         for crop_name, methods in CROP_RISK_RULES.items():
@@ -183,10 +183,11 @@ with st.container():
         st.markdown("""
         ## About This DSS
         
-        **Core Functions**:
-        - Risk prediction for 6 major Nigerian crops
-        - Storage and logistics recommendations
-        - Economic impact projections
+        **About This Decision Support System**  
+        This tool combines agricultural expertise with data analysis to:
+        - Predict post-harvest loss risks
+        - Recommend mitigation strategies
+        - Project economic impacts
         
         **Development Roadmap**:
         1. Phase 1: Rule-based recommendations (current)
@@ -203,6 +204,6 @@ with st.container():
 st.markdown("---")
 st.caption("""
 Developed for AgriConnect Summit Hackathon | Data sources: FMARD, FAO, NARO  
-Team Members: [Ibrahim Yisau,Micheal,Hauwa,Yussuf] | Contact: i.yisau@gmail.com  
+Team Members: [Ibrahim Yisau,Osazuwa Micheal,Hauwa Salihu,Yussuf] | Contact: i.yisau@gmail.com  
 Streamlit App | All rights reserved © 2025
 """)
