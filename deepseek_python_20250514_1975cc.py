@@ -2,122 +2,195 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-# --- DSS Decision Engine Rules ---
-storage_risk_rules = {
+# ======================
+# DSS KNOWLEDGE BASE
+# ======================
+CROP_RISK_RULES = {
     "tomato": {
-        "open shed": ("High", "Tomatoes degrade fast in open-air storage.", "Use evaporative cooling or cold storage."),
-        "sack": ("High", "Sacks retain heat/moisture, accelerating spoilage.", "Use ventilated crates."),
-        "evap. cooler": ("Medium", "Reduces temperature but needs maintenance.", "Ensure water supply."),
-        "cold room": ("Low", "Preserves freshness effectively.", None),
+        "open shed": {
+            "risk": "High",
+            "reason": "Tomatoes degrade rapidly in open-air conditions",
+            "recommendation": "Use evaporative cooling or cold storage"
+        },
+        "ventilated crate": {
+            "risk": "Medium",
+            "reason": "Provides airflow but limited temperature control",
+            "recommendation": "Keep in shaded area and sell within 3 days"
+        },
+        "cold storage": {
+            "risk": "Low",
+            "reason": "Optimal temperature and humidity control",
+            "recommendation": "Monitor for condensation buildup"
+        }
     },
     "cassava": {
-        "open shed": ("High", "Ferments within 2-3 days if not cooled.", "Process quickly or use evaporative cooling."),
-        "sack": ("High", "Speeds up fermentation.", "Use ventilated containers."),
-        "cold room": ("Low", "Slows microbial action.", None),
-    },
-    "yam": {
-        "open shed": ("Medium", "Can sprout or rot in moist environments.", "Store on raised wooden racks."),
-        "sack": ("Medium", "Risk of bruising and airflow restriction.", "Use ventilated stacks."),
-        "warehouse": ("Low", "Lasts several weeks when properly stored.", None),
-    },
-    "plantain": {
-        "open shed": ("High", "Ripens fast in heat and becomes mushy.", "Use cool ventilated area."),
-        "sack": ("High", "Promotes heat and bruising.", "Use shallow trays or hanging bunches."),
-        "cold room": ("Low", "Best option to delay ripening.", None),
+        "open pile": {
+            "risk": "High",
+            "reason": "Rapid fermentation and mold growth",
+            "recommendation": "Process within 48 hours or use sealed storage"
+        },
+        "ventilated shed": {
+            "risk": "Medium",
+            "reason": "Reduces but doesn't eliminate fermentation",
+            "recommendation": "Turn roots regularly to prevent hotspots"
+        },
+        "processed flour": {
+            "risk": "Low",
+            "reason": "Stable shelf life when properly dried",
+            "recommendation": "Ensure moisture content <12% before storage"
+        }
     }
 }
 
-# --- DSS Core Function ---
-def assess_risk(crop_type, storage_method):
+LOGISTICS_OPTIONS = {
+    "tomato": ["Direct to market", "Aggregation center", "Cold chain transport"],
+    "cassava": ["Farm gate sale", "Processing center", "Industrial buyer"]
+}
+
+# ======================
+# DSS CORE FUNCTIONS
+# ======================
+def generate_recommendation(crop, storage_method):
+    """Core DSS analysis function"""
     try:
-        risk, justification, recommendation = storage_risk_rules[crop_type][storage_method]
+        result = CROP_RISK_RULES[crop][storage_method]
+        return {
+            "risk_level": result["risk"],
+            "risk_reason": result["reason"],
+            "action_items": [
+                result["recommendation"],
+                f"Consider these logistics options: {', '.join(LOGISTICS_OPTIONS[crop])}"
+            ]
+        }
     except KeyError:
-        risk, justification, recommendation = "Unknown", "No data for this combination.", "Consult an agricultural expert."
+        return {
+            "risk_level": "Unknown",
+            "risk_reason": "No data available for this combination",
+            "action_items": ["Consult agricultural extension officer"]
+        }
+
+def calculate_economic_impact(crop, risk_level):
+    """DSS financial impact projection"""
+    baseline = {
+        "tomato": {"high": 0.4, "medium": 0.25, "low": 0.1},
+        "cassava": {"high": 0.5, "medium": 0.3, "low": 0.15}
+    }
+    reduction = {
+        "High": 0.1,
+        "Medium": 0.25,
+        "Low": 0.4
+    }
+    
+    loss_rate = baseline.get(crop, {}).get(risk_level.lower(), 0.3)
+    improved_rate = loss_rate * (1 - reduction.get(risk_level, 0.2))
     
     return {
-        "Crop": crop_type.capitalize(),
-        "Storage Method": storage_method,  # Correct key name maintained
-        "Risk Level": risk,
-        "Justification": justification,
-        "Recommendation": recommendation or "No additional action needed."
+        "current_loss": f"{loss_rate*100:.0f}%",
+        "projected_loss": f"{improved_rate*100:.0f}%",
+        "value_saved": f"₦{(loss_rate - improved_rate)*50000:,.0f} per ton"
     }
 
-# --- DSS Interface ---
-st.set_page_config(page_title="AgriGuard DSS", layout="centered")
-st.title("🌿 AgriGuard: Post-Harvest Decision Support System")
-st.markdown("*Data-driven recommendations for storage, logistics, and loss prevention*")
+# ======================
+# DSS USER INTERFACE
+# ======================
+st.set_page_config(
+    page_title="AgriDecide: Post-Harvest DSS",
+    page_icon="🌾",
+    layout="wide"
+)
 
-# --- DSS Inputs ---
-col1, col2 = st.columns(2)
-with col1:
-    crop = st.selectbox("Select Crop", list(storage_risk_rules.keys()))
-with col2:
-    storage = st.selectbox("Select Storage Method", list(storage_risk_rules[crop].keys()))
-
-# --- DSS Output ---
-if st.button("Generate DSS Recommendations"):
-    result = assess_risk(crop, storage)
-    
-    risk_color = {"High": "red", "Medium": "orange", "Low": "green"}.get(result["Risk Level"], "gray")
-    
-    st.subheader("🔍 DSS Analysis Report")
-    st.markdown(f"""
-    **Crop**: {result['Crop']}  
-    **Storage Method**: {result['Storage Method']}  
-    **Risk Level**: <span style='color:{risk_color}; font-weight:bold'>{result['Risk Level']}</span>  
-    **Expert Insight**: {result['Justification']}  
-    **Recommended Action**: {result['Recommendation']}
-    """, unsafe_allow_html=True)
-
-    # --- DSS Visualization ---
-    st.subheader("📊 Comparative Risk Analysis")
-    risk_data = []
-    for crop_name, methods in storage_risk_rules.items():
-        if storage in methods:
-            risk = methods[storage][0]
-            risk_data.append({"Crop": crop_name.capitalize(), "Risk": risk})
-    
-    st.altair_chart(alt.Chart(pd.DataFrame(risk_data)).mark_bar().encode(
-        x=alt.X("Crop", title="", sort="-y"),
-        y=alt.Y("Risk", title="Risk Level"),
-        color=alt.Color("Risk", scale=alt.Scale(
-            domain=["Low", "Medium", "High"],
-            range=["green", "orange", "red"]),
-            legend=None)
-    ).properties(height=300), use_container_width=True)
-
-# --- DSS Impact Assessment ---
-st.markdown("---")
-st.subheader("📈 DSS Economic Impact")
-st.write("""
-**Typical Outcomes Using This DSS**:
-| Metric                | Without DSS | With DSS | Improvement |
-|-----------------------|-------------|----------|-------------|
-| Post-Harvest Loss     | 40%         | 15%      | 62% reduction |
-| Profit per 100kg      | ₦30,000     | ₦42,500  | +₦12,500     |
-| Storage Cost Savings  | ₦8,000      | ₦3,500   | 56% savings  |
-
-*Based on FMARD 2023 data and pilot studies*
+# Header
+st.title("🌾 AgriDecide Decision Support System")
+st.markdown("""
+**Empowering youth agripreneurs with data-driven post-harvest solutions**  
+*Developed for [Competition Name] - Team [Your Team Name]*
 """)
 
-# --- DSS Architecture ---
+# Main DSS Interface
+with st.container():
+    st.header("1. Enter Harvest Details")
+    col1, col2 = st.columns(2)
+    with col1:
+        crop = st.selectbox(
+            "Select Crop",
+            options=list(CROP_RISK_RULES.keys()),
+            help="Choose your harvested crop"
+        )
+    with col2:
+        storage = st.selectbox(
+            "Current Storage Method",
+            options=list(CROP_RISK_RULES[crop].keys()),
+            help="How the crop is currently stored"
+        )
+
+# DSS Analysis
+if st.button("Generate Recommendations", type="primary"):
+    with st.spinner("Analyzing your post-harvest scenario..."):
+        recommendation = generate_recommendation(crop, storage)
+        impact = calculate_economic_impact(crop, recommendation["risk_level"])
+        
+        st.header("2. DSS Analysis Report")
+        
+        # Risk Assessment
+        with st.expander("📊 Risk Evaluation", expanded=True):
+            cols = st.columns(3)
+            cols[0].metric("Risk Level", recommendation["risk_level"])
+            cols[1].metric("Current Loss Rate", impact["current_loss"])
+            cols[2].metric("Projected Loss Rate", impact["projected_loss"])
+            
+            st.write(f"**Key Concern:** {recommendation['risk_reason']}")
+        
+        # Recommendations
+        with st.expander("✅ Action Plan", expanded=True):
+            st.write("**Immediate Actions:**")
+            for action in recommendation["action_items"]:
+                st.write(f"- {action}")
+            
+            st.write("\n**Long-Term Strategies:**")
+            st.write("- Connect with local storage cooperatives")
+            st.write("- Explore contract farming opportunities")
+            st.write("- Consider value-added processing")
+        
+        # Economic Impact
+        with st.expander("💵 Economic Impact", expanded=True):
+            st.plotly_chart(px.bar(
+                x=["Current", "With DSS"],
+                y=[float(impact["current_loss"].strip('%')), 
+                   float(impact["projected_loss"].strip('%'))],
+                labels={"x": "Scenario", "y": "Loss Rate (%)"},
+                title="Projected Loss Reduction"
+            ))
+            
+            st.write(f"**Potential Value Saved:** {impact['value_saved']}")
+
+# DSS Knowledge Base
+with st.container():
+    st.header("3. DSS Knowledge Base")
+    tab1, tab2 = st.tabs(["Crop Guidelines", "About This System"])
+    
+    with tab1:
+        for crop_name, methods in CROP_RISK_RULES.items():
+            with st.expander(f"{crop_name.capitalize()} Storage Guidelines"):
+                df = pd.DataFrame.from_dict(methods, orient="index")
+                st.dataframe(df)
+    
+    with tab2:
+        st.write("""
+        **About This Decision Support System**  
+        This tool combines agricultural expertise with data analysis to:
+        - Predict post-harvest loss risks
+        - Recommend mitigation strategies
+        - Project economic impacts
+        
+        **Development Roadmap:**
+        1. Phase 1: Rule-based recommendations (current)
+        2. Phase 2: Machine learning integration
+        3. Phase 3: Real-time market linkage
+        """)
+
+# Footer
 st.markdown("---")
-st.subheader("⚙️ DSS Technical Framework")
-st.write("""
-**Full Decision Support Pipeline**:
-1. **Data Input Layer**  
-   - Crop selection  
-   - Storage conditions  
-   - *(Future: Weather API, IoT sensors)*  
-
-2. **Analysis Engine**  
-   - Rule-based risk assessment  
-   - *(Future: Machine learning model)*  
-
-3. **Decision Outputs**  
-   - Risk visualization  
-   - Actionable recommendations  
-   - Economic impact projections  
-
-**Next Phase**: Logistics optimization and market linkage
+st.caption("""
+Developed for [Competition Name] | Data sources: FMARD, FAO, NARO  
+Team Members: [Your Names] | Contact: [Your Email]
 """)
