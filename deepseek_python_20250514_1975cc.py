@@ -2,102 +2,207 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-# --- DSS Knowledge Base ---
-CROP_RULES = {
+# ======================
+# DSS KNOWLEDGE BASE
+# ======================
+CROP_RISK_RULES = {
     "maize": {
-        "open sack": ("High", "Prone to mold in humidity", "Use hermetic bags"),
-        "crib": ("Medium", "Rodent/pest exposure", "Treat with neem powder"),
-        "silo": ("Low", "Controlled conditions", "Monitor moisture levels")
+        "open sack": {"risk": "High", "reason": "Prone to mold in humidity", "recommendation": "Use hermetic bags"},
+        "crib": {"risk": "Medium", "reason": "Rodent/pest exposure", "recommendation": "Treat with neem powder"},
+        "silo": {"risk": "Low", "reason": "Controlled conditions", "recommendation": "Monitor moisture levels"}
     },
     "onion": {
-        "open field": ("High", "Sunscald and sprouting", "Cure before storage"),
-        "mesh bags": ("Medium", "Limited airflow", "Hang in ventilated shed"),
-        "cold room": ("Low", "Dormancy preservation", "Maintain 0-4°C")
+        "open field": {"risk": "High", "reason": "Sunscald and sprouting", "recommendation": "Cure before storage"},
+        "mesh bags": {"risk": "Medium", "reason": "Limited airflow", "recommendation": "Hang in ventilated shed"},
+        "cold room": {"risk": "Low", "reason": "Dormancy preservation", "recommendation": "Maintain 0-4°C"}
     },
     "plantain": {
-        "bunch hanging": ("Medium", "Even ripening", "Harvest at 75% maturity"),
-        "cardboard box": ("High", "Bruising and compression", "Use separators"),
-        "ripening room": ("Low", "Ethylene control", "Monitor daily")
+        "bunch hanging": {"risk": "Medium", "reason": "Even ripening", "recommendation": "Harvest at 75% maturity"},
+        "cardboard box": {"risk": "High", "reason": "Bruising and compression", "recommendation": "Use separators"},
+        "ripening room": {"risk": "Low", "reason": "Ethylene control", "recommendation": "Monitor daily"}
     },
     "yam": {
-        "barn": ("Medium", "Sprouting after 3 months", "Treat with wood ash"),
-        "pit": ("High", "Rot in rainy season", "Line with straw"),
-        "cold storage": ("Low", "12-month shelf life", "Maintain 12°C")
+        "barn": {"risk": "Medium", "reason": "Sprouting after 3 months", "recommendation": "Treat with wood ash"},
+        "pit": {"risk": "High", "reason": "Rot in rainy season", "recommendation": "Line with straw"},
+        "cold storage": {"risk": "Low", "reason": "12-month shelf life", "recommendation": "Maintain 12°C"}
     },
     "cassava": {
-        "open pile": ("High", "48-hour spoilage window", "Process immediately"),
-        "trench": ("Medium", "Partial protection", "Cover with moist soil"),
-        "processed": ("Low", "Stable shelf life", "Package when fully dry")
+        "open pile": {"risk": "High", "reason": "48-hour spoilage window", "recommendation": "Process immediately"},
+        "trench": {"risk": "Medium", "reason": "Partial protection", "recommendation": "Cover with moist soil"},
+        "processed flour": {"risk": "Low", "reason": "Stable shelf life", "recommendation": "Package when fully dry"}
     },
     "tomato": {
-        "open basket": ("High", "Bruising and decay", "Use plastic crates"),
-        "shaded shed": ("Medium", "Limited shelf life", "Sell within 2 days"),
-        "cold chain": ("Low", "14-day freshness", "Pre-cool before storage")
+        "open basket": {"risk": "High", "reason": "Bruising and decay", "recommendation": "Use plastic crates"},
+        "shaded shed": {"risk": "Medium", "reason": "Limited shelf life", "recommendation": "Sell within 2 days"},
+        "cold chain": {"risk": "Low", "reason": "14-day freshness", "recommendation": "Pre-cool before storage"}
     }
 }
 
-# --- DSS Core Function ---
-def get_recommendation(crop, method):
+LOGISTICS_OPTIONS = {
+    "maize": ["Direct to market", "Grain silo", "Industrial buyer"],
+    "onion": ["Local markets", "Export channels", "Processing plants"],
+    "plantain": ["Roadside sales", "Urban markets", "Chips processors"],
+    "yam": ["Village markets", "Interstate trade", "Export"],
+    "cassava": ["Local processors", "Industrial starch", "Gari markets"],
+    "tomato": ["Fresh markets", "Ketchup factories", "Supermarkets"]
+}
+
+# ======================
+# DSS CORE FUNCTIONS
+# ======================
+def generate_recommendation(crop, storage_method):
+    """Core DSS analysis function"""
     try:
-        return CROP_RULES[crop][method]
+        result = CROP_RISK_RULES[crop][storage_method]
+        return {
+            "risk_level": result["risk"],
+            "risk_reason": result["reason"],
+            "action_items": [
+                result["recommendation"],
+                f"Logistics options: {', '.join(LOGISTICS_OPTIONS[crop])}"
+            ],
+            "storage_method": storage_method
+        }
     except KeyError:
-        return ("Unknown", "No data for this combination", "Consult agricultural officer")
+        return {
+            "risk_level": "Unknown",
+            "risk_reason": "No data available",
+            "action_items": ["Consult agricultural officer"],
+            "storage_method": storage_method
+        }
 
-# --- DSS Interface ---
-st.set_page_config(page_title="FarmDSS", layout="centered")
-st.title("🌾 FarmDSS: Post-Harvest Advisor")
-st.markdown("**Data-driven decisions for Nigerian crops**")
+def calculate_economic_impact(crop, risk_level):
+    """DSS financial impact projection"""
+    baseline = {
+        "maize": {"high": 0.35, "medium": 0.2, "low": 0.1},
+        "onion": {"high": 0.4, "medium": 0.25, "low": 0.15},
+        "plantain": {"high": 0.45, "medium": 0.3, "low": 0.15},
+        "yam": {"high": 0.3, "medium": 0.2, "low": 0.1},
+        "cassava": {"high": 0.5, "medium": 0.3, "low": 0.15},
+        "tomato": {"high": 0.4, "medium": 0.25, "low": 0.1}
+    }
+    reduction = {"High": 0.15, "Medium": 0.3, "Low": 0.5}
+    
+    loss_rate = baseline.get(crop, {}).get(risk_level.lower(), 0.3)
+    improved_rate = loss_rate * (1 - reduction.get(risk_level, 0.2))
+    
+    return {
+        "current_loss": f"{loss_rate*100:.0f}%",
+        "projected_loss": f"{improved_rate*100:.0f}%",
+        "value_saved": f"₦{(loss_rate - improved_rate)*75000:,.0f} per ton"
+    }
 
-# Inputs
-col1, col2 = st.columns(2)
-with col1:
-    crop = st.selectbox("SELECT CROP", options=list(CROP_RULES.keys()))
-with col2:
-    method = st.selectbox("STORAGE METHOD", options=list(CROP_RULES[crop].keys()))
+# ======================
+# DSS USER INTERFACE
+# ======================
+st.set_page_config(
+    page_title="AgriSmart DSS",
+    page_icon="🌱",
+    layout="wide"
+)
 
-# Analysis
-if st.button("GET RECOMMENDATION"):
-    risk, reason, action = get_recommendation(crop, method)
+# Header
+st.title("🌱 AgriSmart Decision Support System")
+st.markdown("""
+**Reducing Post-Harvest Losses for Nigerian Farmers**  
+*Developed for [Competition Name] - Team [Your Team Name]*
+""")
+
+# Main DSS Interface
+with st.container():
+    st.header("1. Enter Harvest Details")
+    col1, col2 = st.columns(2)
+    with col1:
+        crop = st.selectbox(
+            "SELECT CROP",
+            options=list(CROP_RISK_RULES.keys()),
+            help="Choose your harvested crop"
+        )
+    with col2:
+        storage = st.selectbox(
+            "STORAGE METHOD",
+            options=list(CROP_RISK_RULES[crop].keys()),
+            help="Current storage approach"
+        )
+
+# DSS Analysis
+if st.button("GENERATE DSS REPORT", type="primary"):
+    with st.spinner("Analyzing your post-harvest scenario..."):
+        recommendation = generate_recommendation(crop, storage)
+        impact = calculate_economic_impact(crop, recommendation["risk_level"])
+        
+        st.header("2. DSS Analysis Report")
+        
+        # Risk Assessment
+        with st.expander("📊 RISK EVALUATION", expanded=True):
+            cols = st.columns(3)
+            cols[0].metric("RISK LEVEL", recommendation["risk_level"])
+            cols[1].metric("CURRENT LOSS RATE", impact["current_loss"])
+            cols[2].metric("PROJECTED LOSS RATE", impact["projected_loss"])
+            
+            st.markdown(f"""
+            **CROP**: {crop.capitalize()}  
+            **STORAGE METHOD**: {recommendation['storage_method']}  
+            **KEY CONCERN**: {recommendation['risk_reason']}
+            """)
+        
+        # Recommendations
+        with st.expander("✅ ACTION PLAN", expanded=True):
+            st.subheader("Immediate Actions")
+            for action in recommendation["action_items"]:
+                st.markdown(f"- {action}")
+            
+            st.subheader("Long-Term Strategies")
+            st.markdown("""
+            - Partner with storage cooperatives
+            - Explore contract farming
+            - Invest in value-addition
+            """)
+        
+        # Economic Impact
+        with st.expander("💵 ECONOMIC IMPACT", expanded=True):
+            st.markdown(f"""
+            | METRIC | BEFORE DSS | WITH DSS | IMPROVEMENT |
+            |--------|------------|----------|-------------|
+            | Loss Rate | {impact['current_loss']} | {impact['projected_loss']} | {float(impact['current_loss'].strip('%'))-float(impact['projected_loss'].strip('%'))}% |
+            | Value Saved | - | {impact['value_saved']} | - |
+            """)
+
+# DSS Knowledge Base
+with st.container():
+    st.header("3. DSS Knowledge Base")
+    tab1, tab2 = st.tabs(["📚 CROP GUIDELINES", "ℹ️ ABOUT THE SYSTEM"])
     
-    # Risk Display
-    risk_color = {"High": "red", "Medium": "orange", "Low": "green"}.get(risk, "gray")
-    st.markdown(f"""
-    ### 📋 DSS Report
-    **Crop**: {crop.capitalize()}  
-    **Storage**: {method}  
-    **Risk**: <span style='color:{risk_color}; font-weight:bold'>{risk}</span>  
-    **Reason**: {reason}  
-    **Action**: {action}
-    """, unsafe_allow_html=True)
+    with tab1:
+        for crop_name, methods in CROP_RISK_RULES.items():
+            with st.expander(f"{crop_name.upper()} STORAGE OPTIONS"):
+                df = pd.DataFrame.from_dict(methods, orient="index")
+                st.dataframe(df)
     
-    # Economic Impact
-    st.markdown("""
-    ### 💰 Economic Impact
-    | Scenario | Loss Rate | Profit per Ton |
-    |----------|-----------|----------------|
-    | Current  | 30-50%    | ₦150,000       |
-    | Improved | 10-20%    | ₦250,000       |
-    """)
-    
-    # Risk Comparison Chart
-    chart_data = []
-    for c in CROP_RULES:
-        if method in CROP_RULES[c]:
-            r, _, _ = CROP_RULES[c][method]
-            chart_data.append({"Crop": c.capitalize(), "Risk": r})
-    
-    st.altair_chart(alt.Chart(pd.DataFrame(chart_data)).mark_bar().encode(
-        x=alt.X("Crop:N", title="", sort="-y"),
-        y=alt.X("Risk:N", title="Risk Level"),
-        color=alt.Color("Risk:N", scale=alt.Scale(
-            domain=["Low", "Medium", "High"],
-            range=["green", "orange", "red"]
-        ))
-    ), use_container_width=True)
+    with tab2:
+        st.markdown("""
+        ## About This DSS
+        
+        **Core Functions**:
+        - Risk prediction for 6 major Nigerian crops
+        - Storage and logistics recommendations
+        - Economic impact projections
+        
+        **Development Roadmap**:
+        1. Phase 1: Rule-based recommendations (current)
+        2. Phase 2: Weather integration (Q3 2024)
+        3. Phase 3: Market linkage (Q1 2025)
+        
+        **Data Sources**:
+        - FMARD reports
+        - FAO best practices
+        - NARO field studies
+        """)
 
 # Footer
 st.markdown("---")
 st.caption("""
-**Competition Submission** | Data: FMARD, FAO  
-Team: [YOUR TEAM NAME] | Streamlit App
+Developed for [Competition Name] | Data sources: FMARD, FAO, NARO  
+Team Members: [Your Names] | Contact: [Your Email]  
+Streamlit App | All rights reserved © 2024
 """)
