@@ -190,8 +190,8 @@ with st.container():
         
         **Development Roadmap**:
         1. Phase 1: Rule-based recommendations (current)
-        2. Phase 2: Weather integration (Q3 2024)
-        3. Phase 3: Market linkage (Q1 2025)
+        2. Phase 2: Machine learning (& Weather) integration 
+        3. Phase 3: Real-time market linkage 
         
         **Data Sources**:
         - FMARD reports
@@ -202,7 +202,7 @@ with st.container():
 # Footer
 st.markdown("---")
 st.caption("""
-Developed for [Competition Name] | Data sources: FMARD, FAO, NARO  
-Team Members: [Your Names] | Contact: [Your Email]  
-Streamlit App | All rights reserved © 2024
+Developed for AgriConnect Summit Hackathon | Data sources: FMARD, FAO, NARO  
+Team Members: [Ibrahim Yisau,Micheal,Hauwa,Yussuf] | Contact: i.yisau@gmail.com  
+Streamlit App | All rights reserved © 2025
 """)
